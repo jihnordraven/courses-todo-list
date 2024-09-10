@@ -8,39 +8,44 @@ import { UpdateTaskDto } from "./dtos/update-task.dto"
 export class TasksService {
 	constructor(private readonly prismaService: PrismaService) {}
 
-	async get(): Promise<Task[]> {
-		return await this.prismaService.task.findMany()
+	async get(userId: number): Promise<Task[]> {
+		return await this.prismaService.task.findMany({ where: { userId } })
 	}
 
-	async createOne(dto: CreateTaskDto) {
+	async createOne(dto: CreateTaskDto, userId: number) {
 		const createdTask = await this.prismaService.task.create({
-			data: dto
+			data: {
+				...dto,
+				userId
+			}
 		})
 
 		return createdTask
 	}
 
-	async updateOne(id: number, dto: UpdateTaskDto) {
-		await this.getOneOrThrow(id)
+	async updateOne(id: number, dto: UpdateTaskDto, userId: number) {
+		await this.getOneOrThrow(id, userId)
 
 		const deletedTask = await this.prismaService.task.update({
-			where: { id },
+			where: { id, userId },
 			data: dto
 		})
 
 		return deletedTask
 	}
 
-	async deleteOne(id: number) {
-		await this.getOneOrThrow(id)
+	async deleteOne(id: number, userId: number) {
+		await this.getOneOrThrow(id, userId)
 
-		const updatedTask = await this.prismaService.task.delete({ where: { id } })
+		const updatedTask = await this.prismaService.task.delete({
+			where: { id, userId }
+		})
 
 		return updatedTask
 	}
 
 	// Private methods
-	private async getOneOrThrow(id: number): Promise<Task> {
+	private async getOneOrThrow(id: number, userId: number): Promise<Task> {
 		const task = await this.prismaService.task.findUnique({ where: { id } })
 
 		if (!task) {
